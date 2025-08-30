@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
 import { PopularBusinessCard } from "@/components/PopularBusinessCard";
 import { supabase } from "@/integrations/supabase/client";
+import BusinessForm from "@/components/BusinessForm";
 import { 
   User, 
   Mail, 
@@ -75,9 +76,7 @@ export default function UserDashboard() {
   const handleSidebarAction = (action: string) => {
     setActiveSection(action);
     
-    if (action === "add-listing") {
-      navigate("/list-business");
-    } else if (action === "website-pos") {
+    if (action === "website-pos") {
       navigate("/list-&-get-pos-website");
     } else if (action === "listings") {
       fetchUserBusinesses();
@@ -181,6 +180,17 @@ export default function UserDashboard() {
                 </CardContent>
               </Card>
             )}
+          </div>
+        );
+
+      case "add-listing":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Add New Business Listing</h2>
+            <BusinessForm onSuccess={() => {
+              setActiveSection("listings");
+              fetchUserBusinesses();
+            }} />
           </div>
         );
 

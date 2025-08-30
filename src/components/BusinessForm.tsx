@@ -65,9 +65,10 @@ const PREDEFINED_PRODUCTS = [
 
 interface BusinessFormProps {
   onSuccess?: () => void;
+  editingBusiness?: any;
 }
 
-export default function BusinessForm({ onSuccess }: BusinessFormProps) {
+export default function BusinessForm({ onSuccess, editingBusiness }: BusinessFormProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -79,21 +80,21 @@ export default function BusinessForm({ onSuccess }: BusinessFormProps) {
   const [newProductName, setNewProductName] = useState("");
   
   const [formData, setFormData] = useState<BusinessFormData>({
-    name: "",
-    description: "",
-    category: "",
-    phone: "",
-    licenseExpiredDate: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    website: "",
-    facebookPage: "",
-    tiktokUrl: "",
-    startingPrice: "",
-    options: [],
-    productsCatalog: [],
+    name: editingBusiness?.name || "",
+    description: editingBusiness?.description || "",
+    category: editingBusiness?.category || "",
+    phone: editingBusiness?.phone || "",
+    licenseExpiredDate: editingBusiness?.license_expired_date || "",
+    address: editingBusiness?.address || "",
+    city: editingBusiness?.city || "",
+    state: editingBusiness?.state || "",
+    zipCode: editingBusiness?.zip_code || "",
+    website: editingBusiness?.website || "",
+    facebookPage: editingBusiness?.facebook_page || "",
+    tiktokUrl: editingBusiness?.tiktok_url || "",
+    startingPrice: editingBusiness?.starting_price || "",
+    options: editingBusiness?.business_options || [],
+    productsCatalog: editingBusiness?.products_catalog ? editingBusiness.products_catalog.split(', ') : [],
     onlineShopOption: "sure",
     paymentOption: "stripe"
   });
@@ -269,35 +270,42 @@ export default function BusinessForm({ onSuccess }: BusinessFormProps) {
         receiptUrl = await uploadFile(receiptFile, 'business-assets', receiptPath);
       }
 
-      // Create business listing
-      const { error } = await supabase
-        .from('businesses')
-        .insert({
-          owner_id: user.id,
-          name: formData.name,
-          description: formData.description,
-          category: formData.category,
-          phone: formData.phone,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip_code: formData.zipCode,
-          website: formData.website,
-          image_url: logoUrl || null,
-          facebook_page: formData.facebookPage || null,
-          tiktok_url: formData.tiktokUrl || null,
-          starting_price: formData.startingPrice || null,
-          business_options: formData.options.length > 0 ? formData.options : null,
-          products_catalog: formData.productsCatalog.length > 0 ? formData.productsCatalog.join(', ') : null,
-          license_expired_date: formData.licenseExpiredDate || null,
-          product_images: imageUrls.length > 0 ? imageUrls : null
-        });
+      // Create or update business listing
+      const businessData = {
+        owner_id: user.id,
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zipCode,
+        website: formData.website,
+        image_url: logoUrl || editingBusiness?.image_url || null,
+        facebook_page: formData.facebookPage || null,
+        tiktok_url: formData.tiktokUrl || null,
+        starting_price: formData.startingPrice || null,
+        business_options: formData.options.length > 0 ? formData.options : null,
+        products_catalog: formData.productsCatalog.length > 0 ? formData.productsCatalog.join(', ') : null,
+        license_expired_date: formData.licenseExpiredDate || null,
+        product_images: imageUrls.length > 0 ? imageUrls : editingBusiness?.product_images || null
+      };
+
+      const { error } = editingBusiness 
+        ? await supabase
+            .from('businesses')
+            .update(businessData)
+            .eq('id', editingBusiness.id)
+        : await supabase
+            .from('businesses')
+            .insert(businessData);
 
       if (error) throw error;
 
       toast({
         title: "Success!",
-        description: "Your business has been listed successfully.",
+        description: editingBusiness ? "Your business has been updated successfully." : "Your business has been listed successfully.",
       });
 
       // Call onSuccess callback if provided, otherwise navigate to dashboard
@@ -732,7 +740,7 @@ export default function BusinessForm({ onSuccess }: BusinessFormProps) {
             size="lg"
             disabled={loading}
           >
-            {loading ? "Creating Listing..." : "List My Business"}
+            {loading ? (editingBusiness ? "Updating Business..." : "Creating Listing...") : (editingBusiness ? "Update My Business Info" : "List My Business")}
           </Button>
         </form>
       </CardContent>

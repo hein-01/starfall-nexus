@@ -14,8 +14,10 @@ import {
   Globe, 
   CreditCard, 
   LogOut,
-  Home
+  Home,
+  Edit
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -48,6 +50,8 @@ export default function UserDashboard() {
   const [activeSection, setActiveSection] = React.useState("dashboard");
   const [userBusinesses, setUserBusinesses] = React.useState([]);
   const [loadingBusinesses, setLoadingBusinesses] = React.useState(false);
+  const [editModalOpen, setEditModalOpen] = React.useState(false);
+  const [editingBusiness, setEditingBusiness] = React.useState(null);
 
   const fetchUserBusinesses = async () => {
     if (!user?.id) return;
@@ -86,6 +90,17 @@ export default function UserDashboard() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleEditBusiness = (business: any) => {
+    setEditingBusiness(business);
+    setEditModalOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setEditModalOpen(false);
+    setEditingBusiness(null);
+    fetchUserBusinesses();
   };
 
   const getDashboardContent = () => {
@@ -161,7 +176,16 @@ export default function UserDashboard() {
             ) : userBusinesses.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {userBusinesses.map((business) => (
-                  <PopularBusinessCard key={business.id} business={business} />
+                  <div key={business.id} className="relative">
+                    <Button
+                      onClick={() => handleEditBusiness(business)}
+                      className="absolute top-2 left-2 z-10 bg-destructive hover:bg-destructive/90 text-destructive-foreground px-2 py-1 h-auto text-xs rounded"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <PopularBusinessCard business={business} />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -389,6 +413,21 @@ export default function UserDashboard() {
           </main>
         </SidebarProvider>
       </div>
+      
+      {/* Edit Business Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Business Listing</DialogTitle>
+          </DialogHeader>
+          {editingBusiness && (
+            <BusinessForm 
+              editingBusiness={editingBusiness}
+              onSuccess={handleEditSuccess}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
